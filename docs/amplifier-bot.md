@@ -150,3 +150,44 @@ Routine이 띄우는 새 세션은 기본 브랜치를 체크아웃한다. 스�
 - **스레드 맥락 보강이 실제로 효과가 있었다.** "AI 드라이브 배포되었습니다" 같은 한 줄 메시지도 부모 스레드를 읽어 배포 경위를 붙이니 뉴스가 됐다. 이 단계를 빼면 위클리가 맥락 없는 단문 모음이 된다.
 - **Routine에는 커넥터와 저장소 접근이 별개 설정이다.** 커넥터(Slack·Notion)만 붙이면 세션은 "성공"으로 끝나지만 저장소를 못 읽어 SKILL.md 없이 돌아간다. 둘 다 필요하다.
 - 슬랙 검색 결과의 `Permalink`를 그대로 쓰는 편이 직접 조립한 링크보다 정확하다 (스레드 파라미터 포함).
+
+---
+
+## 10. 봇 명의 발송과 네트워크 정책 (2026-09-07)
+
+위클리를 **확성기봇 명의**로 내보내려면 Slack Incoming Webhook이 필요하다. Slack MCP(`slack_send_message`)는 항상 쓸 수 있지만 **운영자 개인 계정 명의**로만 나가고, 슬랙이 본인 멘션 알림을 억제하기 때문에 전사 공지용으로는 약하다.
+
+문제는 웹훅 도메인이 클라우드 세션의 egress 정책에 걸린다는 점이다.
+
+```
+kind:   connect_rejected
+detail: gateway answered 403 to CONNECT
+host:   hooks.slack.com:443
+```
+
+진단은 `curl -sS "$HTTPS_PROXY/__agentproxy/status"` 로 한다. `recentRelayFailures`에 차단된 호스트와 사유가 그대로 찍힌다. 정책 거부이므로 재시도하거나 우회하지 않는다.
+
+### 환경마다 정책이 다르다
+
+계정에 환경이 여러 개면 네트워크 정책도 각각이다. 확인은 `list_environments`.
+
+| 환경 | hooks.slack.com |
+| --- | --- |
+| `env_01KNQLFBBCUbK2iw4D3EUVCx` (Default Cloud Environment) | 차단 |
+| `env_01Rk69KYRBjm3TSL3hPL81ER` (Default — trusted network access) | 열림 |
+
+**웹훅으로 발송하는 Routine은 열린 환경에서 만들어야 한다.** 차단된 환경에 만들면 실행은 "성공"으로 끝나면서 발송만 조용히 실패한다.
+
+### 출근봇이 웹훅으로 잘 도는 이유
+
+그 작업은 클라우드가 아니라 운영자의 맥에서 돌기 때문이다(스킬이 `/Users/mary/Desktop/...`에 CSV를 쓴다). 로컬에서 된다고 클라우드에서도 된다는 뜻이 아니다 — 새 봇을 만들 때 가장 걸리기 쉬운 함정이다.
+
+### 연결 테스트는 GET으로
+
+슬랙 웹훅은 GET에 대해 메시지를 게시하지 않고 400만 돌려준다. 채널에 아무것도 올리지 않고 터널만 확인할 수 있다.
+
+```
+curl -sS -o /dev/null -w '%{http_code}\n' <webhook_url>
+```
+
+`CONNECT tunnel failed, response 403` → 아직 차단. 정상 HTTP 코드 → 열림.
