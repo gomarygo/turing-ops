@@ -185,6 +185,8 @@ Notion의 `발행호수`에는 내부 기록용 일련번호(최댓값 + 1, 없�
 
 `slack_send_message_draft(channel_id="C016GTMN3HN", message=<본문>)` 호출.
 
+- **응답에 `draft_id`가 있는지 반드시 확인한다.** `result`가 "Draft message is created"여도 `draft_id`가 없으면 **실제로는 생성되지 않은 것**이다. 그 경우 아래를 고쳐서 다시 호출한다.
+- **링크 URL에서 쿼리 파라미터(`?thread_ts=...&cid=...`)를 떼고 기본 퍼머링크만 남긴다.** `&`가 섞인 긴 URL이 초안 생성을 조용히 실패시킨다. `.../archives/<channel>/p<ts>` 형태면 스레드 답글도 정상적으로 열린다.
 - 성공하면 결과의 `channel_link`를 확보한다.
 - `draft_already_exists` 오류가 나면 그 채널에 이미 초안이 있다는 뜻이다. 덮어쓰려 하지 말고, 본문 전체를 메리 DM으로 보내면서 "채널에 기존 초안이 있어 DM으로 보냅니다"라고 알린다.
 
