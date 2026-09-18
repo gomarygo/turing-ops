@@ -44,7 +44,17 @@ description: "Build the weekly 「튜링 위클리」 news post from the Notion 
 
 **그래도 사람 검수가 먼저다.** 본문을 운영자에게 보여주고 "보내라"는 답을 받은 뒤에만 웹훅을 쏜다. 검수 없이 자동 발송하지 않는다 — `@channel`이 걸린 전사 공지다.
 
-웹훅 payload는 Slack mrkdwn을 쓴다(`*굵게*`, `<url|텍스트>`, `<!channel>`). JSON을 임시파일에 쓰고 `cat`으로 내용을 눈으로 확인한 뒤 `curl -X POST`하며, 응답이 정확히 `ok`인지 본다.
+웹훅 payload는 Slack mrkdwn을 쓴다(`*굵게*`, `<url|텍스트>`, `<!channel>`). JSON을 임시파일에 쓰고 `cat`으로 내용을 눈으로 확인한 뒤 `curl -X POST`한다.
+
+**본문은 최상위 `text`가 아니라 `blocks`에 담는다.**
+```json
+{"username":"확성기봇","icon_emoji":":mega:","unfurl_links":false,"unfurl_media":false,
+ "text":"튜링 위클리 초안",
+ "blocks":[{"type":"section","text":{"type":"mrkdwn","text":"<본문>"}}]}
+```
+`text`로 긴 인용 블록 본문을 보냈을 때 **`ok` / HTTP 200을 받고도 빈 메시지가 올라간 적이 두 번 있다.** `blocks`로 바꾸자 그대로 들어갔다. 최상위 `text`는 알림 미리보기용 한 줄로만 남긴다. section 하나의 상한은 3000자이므로 본문이 넘으면 카테고리 단위로 section을 나눈다.
+
+**`ok`는 도착의 증거가 아니다.** 보낸 뒤 반드시 `slack_read_channel(limit=1, response_format="detailed")`로 **그 메시지를 다시 읽어 본문이 실제로 들어갔는지 눈으로 확인한다.** 비어 있으면 `blocks`로 다시 보낸다. 이 확인을 건너뛰면 메리는 빈 말풍선을 보고 있는데 나는 보냈다고 보고하게 된다.
 
 ## 단계
 
