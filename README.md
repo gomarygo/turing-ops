@@ -8,7 +8,7 @@
 
 | 봇 | 스킬 | 하는 일 | 문서 |
 | --- | --- | --- | --- |
-| 📣 확성기봇 | `amplifier-collect`, `amplifier-weekly` | 📣 찍힌 슬랙 메시지를 모아 매주 금요일 「튜링 위클리」 발행 | [docs/amplifier-bot.md](docs/amplifier-bot.md) |
+| 📣 확성기봇 | `amplifier-collect`, `amplifier-weekly` | 📣 찍힌 슬랙 메시지를 모아 매주 마지막 영업일 「튜링 위클리」 발행 | [docs/amplifier-bot.md](docs/amplifier-bot.md) |
 
 ## 동작 구조
 
